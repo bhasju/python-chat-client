@@ -11,6 +11,7 @@ keywords=['@list','@file','@quit', '@dm']
 IP = "127.0.0.1"
 PORT = 1234
 my_username = input("Username: ")
+Active= True
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((IP, PORT))
@@ -54,7 +55,7 @@ except Exception as e:
 class sendMessage(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
-		#threading.Thread.daemon=True
+		threading.Thread.daemon=True
 
 
 	def specialmessage(self, message):
@@ -65,11 +66,16 @@ class sendMessage(threading.Thread):
 		print(key)
 		if key==keywords[0]: #list
 			message=process_message(' ',keywords[0])
-			client_socket.sendall(message)		
+			client_socket.sendall(message)	
+		if key==keywords[2]: #quit
+			message=process_message(' ',keywords[2])
+			client_socket.sendall(message)	
+			Active=False
+			sys.exit()		
 
 
 	def run(self):
-		while True:
+		while Active:
 			message = input()
 			if message:
 				if message[0]=='@':
@@ -81,11 +87,11 @@ class sendMessage(threading.Thread):
 class acceptMessage(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
-		#threading.Thread.daemon=True
+		threading.Thread.daemon=True
 
 	def run(self):
 		#print("receive start")
-		while True:
+		while Active:
 			try:
 				while True:
 					sender, message = receive_message(client_socket)
@@ -105,6 +111,8 @@ send = sendMessage()
 receive = acceptMessage()
 send.start()
 receive.start()
+while Active:
+	continue
 
 # while True:
 # 	message = input(f'{my_username} > ')

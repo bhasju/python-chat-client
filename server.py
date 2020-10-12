@@ -45,7 +45,9 @@ class clients(threading.Thread):
 			for client,user in chatroom.client_list:
 				user_list = user_list+ user +'\n'
 			self.client_socket.sendall(add_header('server')+add_header(user_list))	
-			print(user_list)	
+			print(user_list)
+		elif message['status']== '@quit':
+			self.disconnected=True		
 
 
 	def check_for_message(self):
@@ -66,6 +68,10 @@ class clients(threading.Thread):
 		while self.disconnected==False:
 			self.check_avl()
 			self.check_for_message()
+			if self.disconnected==True:
+				self.client_socket.sendall(add_header('server')+add_header(self.client_username+' has left the chat'))
+				chatroom.client_list.remove((self.client_socket,self.client_username))
+
 
 class Chatroom(threading.Thread):
 	def __init__(self):
