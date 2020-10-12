@@ -6,6 +6,7 @@ import threading
 
 HEADER_LENGTH = 10
 STATUS_LENGTH = 20
+keywords=['@list','@file','@quit']
 
 IP = "127.0.0.1"
 PORT = 1234
@@ -54,13 +55,18 @@ class sendMessage(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 		#threading.Thread.daemon=True
+	def specialmessage(self, message):
+		print('you sent a special message')
 
 	def run(self):
 		while True:
 			message = input()
 			if message:
-				message=process_message(message)
-				client_socket.sendall(message)	
+				if message[0]=='@':
+					self.specialmessage(message)
+				else:	
+					message=process_message(message)
+					client_socket.sendall(message)	
 
 class acceptMessage(threading.Thread):
 	def __init__(self):

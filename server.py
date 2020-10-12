@@ -39,17 +39,21 @@ class clients(threading.Thread):
 		for client in exceptional:
 			if client == self.client_socket:
 				self.disconnected=True
+	def specialheader(self, message):
+		pass			
 
 	def check_for_message(self):
 		
 		message=receive_message(self.client_socket)
 		if message==False:
 			self.disconnected=True
-
-		chatroom.message_list.append({'sock':self.client_socket,'username':self.client_username,'message': message})
-		print(f"{self.client_username} says {message['data'].decode('utf-8')}")
-			# print(chatroom.message_list)
-			#test			
+		else:
+			if message['status']== 'nothing':
+				chatroom.message_list.append({'sock':self.client_socket,'username':self.client_username,'message': message})
+				print(f"{self.client_username} says {message['data'].decode('utf-8')}")
+					# print(chatroom.message_list)
+			else:
+				self.specialheader(message)		
 
 	def run(self):
 		print(f"{self.client_username} client thread started")
@@ -71,7 +75,7 @@ class Chatroom(threading.Thread):
 				continue
 			else:
 				for message in self.message_list:
-					for client in self.client_list:
+					for client,username in self.client_list:
 						if message['sock'] != client:	
 							client.sendall(add_header(message['username'])+message['message']['header']+message['message']['data'])
 							
@@ -90,7 +94,7 @@ def receive_message(sender_socket):
 		message_header = sender_socket.recv(HEADER_LENGTH)
 		if not len(message_header):
 			return False
-		message_status = sender_socket.recv(STATUS_LENGTH)
+		message_status = sender_socket.recv(STATUS_LENGTH).decode('utf-8').strip()
 		message_length = int(message_header.decode('utf-8').strip())
 		return {'header': message_header, 'status':message_status, 'data': sender_socket.recv(message_length)}
 	except:
@@ -106,7 +110,7 @@ def accept_new_connection(client_list, sockets_list):
 	if client_username is False:
 		return
 	new_client=clients(client_socket=client_socket,client_address= client_address,client_username=client_username['data'].decode('utf-8'))	
-	client_list.append(client_socket)	
+	client_list.append((client_socket,client_username))	
 	new_client.start()
 	sockets_list.append(client_socket)
 
