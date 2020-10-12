@@ -23,16 +23,27 @@ def add_header(message):
 
 def receive_message(sender_socket):
 
-	try:
-		message_header = sender_socket.recv(HEADER_LENGTH)
-		if not len(message_header):
-			return False
+	# try:
+	# 	message_header = sender_socket.recv(HEADER_LENGTH)
+	# 	if not len(message_header):
+	# 		return False
 
-		message_length = int(message_header.decode('utf-8').strip())
-		return {'header': message_header, 'data': sender_socket.recv(message_length)}
-		print("message received")
-	except:
-		return False
+	# 	message_length = int(message_header.decode('utf-8').strip())
+	# 	return {'header': message_header, 'data': sender_socket.recv(message_length)}
+	# except:
+	# 	return False
+	username_header = client_socket.recv(HEADER_LENGTH)
+	if not len(username_header):
+		print('Connection closed by the server')
+		sys.exit()
+	username_length = int(username_header.decode('utf-8').strip())
+	username = client_socket.recv(username_length).decode('utf-8')
+
+	message_header = client_socket.recv(HEADER_LENGTH)
+	message_length = int(message_header.decode('utf-8').strip())
+	message = client_socket.recv(message_length).decode('utf-8')
+	return username, message
+
 
 try:
 	client_socket.send(add_header(my_username))
@@ -47,12 +58,12 @@ class sendMessage(threading.Thread):
 		#threading.Thread.daemon=True
 
 	def run(self):
-		print("send start")
+		#print("send start")
 		while True:
 			message = input(f'{my_username} > ')
 			if message:
 				message=add_header(message)
-				client_socket.send(message)	
+				client_socket.sendall(message)	
 
 class acceptMessage(threading.Thread):
 	def __init__(self):
@@ -60,22 +71,42 @@ class acceptMessage(threading.Thread):
 		#threading.Thread.daemon=True
 
 	def run(self):
-		print("receive start")
-		try:
-			while True:
-				message = receive_message(client_socket)
-				if not message:
-					continue
-				else:
-					print(message['data'].decode('utf-8'))
+		#print("receive start")
+		while True:
+			try:
+				while True:
+					sender, message = receive_message(client_socket)
+					#message = receive_message(client_socket)
+					print(sender+'>>'+message)
+			except IOError as e:
+				if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+					print('Reading error: {}'.format(str(e)))
+				continue
+			except Exception as e:
+				print('Reading error: '.format(str(e)))
+				sys.exit()							
 
-		except IOError as e:
-			if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
-				print('Reading error: {}'.format(str(e)))
-				#sys.exit()		
 
 
 send = sendMessage()
 receive = acceptMessage()
 send.start()
 receive.start()
+
+# while True:
+# 	message = input(f'{my_username} > ')
+# 	if message:
+# 		message=add_header(message)
+# 		client_socket.sendall(message)	
+# 	try:
+# 		while True:
+# 			sender, message = receive_message(client_socket)
+# 			#message = receive_message(client_socket)
+# 			print(sender+'>>'+message)
+# 	except IOError as e:
+# 		if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+# 			print('Reading error: {}'.format(str(e)))
+# 		continue
+# 	except Exception as e:
+# 		print('Reading error: '.format(str(e)))
+# 		sys.exit()					

@@ -45,8 +45,8 @@ class clients(threading.Thread):
 		if message==False:
 			self.disconnected=True
 		else:
-			chatroom.message_list.append({'sock':self.client_socket,'message': message})
-			# print(f"{self.client_username} says {message['data'].decode('utf-8')}")
+			chatroom.message_list.append({'sock':self.client_socket,'username':self.client_username,'message': message})
+			print(f"{self.client_username} says {message['data'].decode('utf-8')}")
 			# print(chatroom.message_list)
 			#test			
 
@@ -71,12 +71,17 @@ class Chatroom(threading.Thread):
 			else:
 				for message in self.message_list:
 					for client in self.client_list:
-						if message['sock'] != client:
-							send_message(message['message'],client)
+						if message['sock'] != client:	
+							client.sendall(add_header(message['username'])+message['message']['header']+message['message']['data'])
+							
 				self.message_list.clear()			
 								
 
-
+def add_header(message):
+#takes a string and adds header to it
+	message = message.encode('utf-8')
+	message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+	return message_header+message
 
 def receive_message(sender_socket):
 
@@ -87,14 +92,11 @@ def receive_message(sender_socket):
 
 		message_length = int(message_header.decode('utf-8').strip())
 		return {'header': message_header, 'data': sender_socket.recv(message_length)}
-		print("message received")
 	except:
 		return False
 
 
 
-def send_message(message_data,reciever_socket):
-	reciever_socket.send(message_data['header']+message_data['data'])
 
 
 def accept_new_connection(client_list, sockets_list):
