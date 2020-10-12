@@ -39,8 +39,14 @@ class clients(threading.Thread):
 		for client in exceptional:
 			if client == self.client_socket:
 				self.disconnected=True
-	def specialheader(self, message):
-		pass			
+	def specialstatus(self, message):
+		if message['status']== '@list':	
+			user_list = "the user list is \n"
+			for client,user in chatroom.client_list:
+				user_list = user_list+ user +'\n'
+			self.client_socket.sendall(add_header('server')+add_header(user_list))	
+			print(user_list)	
+
 
 	def check_for_message(self):
 		
@@ -53,7 +59,7 @@ class clients(threading.Thread):
 				print(f"{self.client_username} says {message['data'].decode('utf-8')}")
 					# print(chatroom.message_list)
 			else:
-				self.specialheader(message)		
+				self.specialstatus(message)		
 
 	def run(self):
 		print(f"{self.client_username} client thread started")
@@ -106,15 +112,16 @@ def receive_message(sender_socket):
 
 def accept_new_connection(client_list, sockets_list):
 	client_socket, client_address = server_socket.accept()
-	client_username = receive_message(client_socket)
+	client_username = receive_message(client_socket)['data'].decode('utf-8')
 	if client_username is False:
 		return
-	new_client=clients(client_socket=client_socket,client_address= client_address,client_username=client_username['data'].decode('utf-8'))	
+
+	new_client=clients(client_socket=client_socket,client_address= client_address,client_username=client_username)	
 	client_list.append((client_socket,client_username))	
 	new_client.start()
 	sockets_list.append(client_socket)
 
-	print('Accepted new connection from {}:{}, username: {}'.format(*client_address, client_username['data'].decode('utf-8')))
+	print('Accepted new connection from {}:{}, username: {}'.format(*client_address, client_username))
 
 chatroom=Chatroom()
 chatroom.start()

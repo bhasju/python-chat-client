@@ -6,7 +6,7 @@ import threading
 
 HEADER_LENGTH = 10
 STATUS_LENGTH = 20
-keywords=['@list','@file','@quit']
+keywords=['@list','@file','@quit', '@dm']
 
 IP = "127.0.0.1"
 PORT = 1234
@@ -25,9 +25,9 @@ def add_header(message):
 	message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
 	return message_header+message
 
-def process_message(message):
+def process_message(message, status):
 	message=message.encode('utf-8')
-	message=add_status(message,'nothing')
+	message=add_status(message,status)
 	message=add_header(message)
 	return message
 
@@ -46,7 +46,7 @@ def receive_message(sender_socket):
 
 
 try:
-	client_socket.sendall(process_message(my_username))
+	client_socket.sendall(process_message(my_username,'username'))
 except Exception as e:
 	print("Server isn't active. Exiting...")
 	#sys.exit()
@@ -55,8 +55,18 @@ class sendMessage(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 		#threading.Thread.daemon=True
+
+
 	def specialmessage(self, message):
-		print('you sent a special message')
+		divide = message.split(' ',1)
+		key = divide[0]
+		if len(divide)>1:
+			message_content = divide[1]
+		print(key)
+		if key==keywords[0]: #list
+			message=process_message(' ',keywords[0])
+			client_socket.sendall(message)		
+
 
 	def run(self):
 		while True:
@@ -65,7 +75,7 @@ class sendMessage(threading.Thread):
 				if message[0]=='@':
 					self.specialmessage(message)
 				else:	
-					message=process_message(message)
+					message=process_message(message,'nothing')
 					client_socket.sendall(message)	
 
 class acceptMessage(threading.Thread):
