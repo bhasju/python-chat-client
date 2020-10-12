@@ -47,7 +47,12 @@ class clients(threading.Thread):
 			self.client_socket.sendall(add_header('server')+add_header(user_list))	
 			print(user_list)
 		elif message['status']== '@quit':
-			self.disconnected=True		
+			self.disconnected=True	
+		elif message['status'][0]=='#':
+			receiver = message['status'][1:]
+			for client,user in chatroom.client_list:
+				if user==receiver:
+					client.sendall(add_header(self.client_username)+ add_header('@DM '+message['data'].decode('utf-8')))
 
 
 	def check_for_message(self):

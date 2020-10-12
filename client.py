@@ -72,6 +72,12 @@ class sendMessage(threading.Thread):
 			client_socket.sendall(message)	
 			Active=False
 			sys.exit()		
+		if key==keywords[3]: #dm
+			receiver= message_content.split(' ',1)[0]
+			message_content= message_content.split(' ',1)[1]
+			message = process_message(message_content,'#'+receiver)
+			client_socket.sendall(message)	
+			
 
 
 	def run(self):
