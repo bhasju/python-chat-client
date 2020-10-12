@@ -5,6 +5,7 @@ import sys
 import threading
 
 HEADER_LENGTH = 10
+STATUS_LENGTH = 20
 
 IP = "127.0.0.1"
 PORT = 1234
@@ -14,24 +15,22 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((IP, PORT))
 client_socket.setblocking(False)
 
+def add_status(message, status):
+	message_status = f"{status:<{STATUS_LENGTH}}".encode('utf-8')
+	return message_status+message
 
 def add_header(message):
-#takes a string and adds header to it
-	message = message.encode('utf-8')
+	#message = message.encode('utf-8')
 	message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
 	return message_header+message
 
+def process_message(message):
+	message=message.encode('utf-8')
+	message=add_status(message,'nothing')
+	message=add_header(message)
+	return message
+
 def receive_message(sender_socket):
-
-	# try:
-	# 	message_header = sender_socket.recv(HEADER_LENGTH)
-	# 	if not len(message_header):
-	# 		return False
-
-	# 	message_length = int(message_header.decode('utf-8').strip())
-	# 	return {'header': message_header, 'data': sender_socket.recv(message_length)}
-	# except:
-	# 	return False
 	username_header = client_socket.recv(HEADER_LENGTH)
 	if not len(username_header):
 		print('Connection closed by the server')
@@ -46,8 +45,7 @@ def receive_message(sender_socket):
 
 
 try:
-	client_socket.send(add_header(my_username))
-	print("sent header")
+	client_socket.sendall(process_message(my_username))
 except Exception as e:
 	print("Server isn't active. Exiting...")
 	#sys.exit()
@@ -58,11 +56,10 @@ class sendMessage(threading.Thread):
 		#threading.Thread.daemon=True
 
 	def run(self):
-		#print("send start")
 		while True:
-			message = input(f'{my_username} > ')
+			message = input()
 			if message:
-				message=add_header(message)
+				message=process_message(message)
 				client_socket.sendall(message)	
 
 class acceptMessage(threading.Thread):

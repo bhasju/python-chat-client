@@ -4,6 +4,7 @@ import threading
 #from chatroom import Chatroom
 
 HEADER_LENGTH = 10
+STATUS_LENGTH = 20
 
 IP = "127.0.0.1"
 PORT = 1234
@@ -44,9 +45,9 @@ class clients(threading.Thread):
 		message=receive_message(self.client_socket)
 		if message==False:
 			self.disconnected=True
-		else:
-			chatroom.message_list.append({'sock':self.client_socket,'username':self.client_username,'message': message})
-			print(f"{self.client_username} says {message['data'].decode('utf-8')}")
+
+		chatroom.message_list.append({'sock':self.client_socket,'username':self.client_username,'message': message})
+		print(f"{self.client_username} says {message['data'].decode('utf-8')}")
 			# print(chatroom.message_list)
 			#test			
 
@@ -89,9 +90,9 @@ def receive_message(sender_socket):
 		message_header = sender_socket.recv(HEADER_LENGTH)
 		if not len(message_header):
 			return False
-
+		message_status = sender_socket.recv(STATUS_LENGTH)
 		message_length = int(message_header.decode('utf-8').strip())
-		return {'header': message_header, 'data': sender_socket.recv(message_length)}
+		return {'header': message_header, 'status':message_status, 'data': sender_socket.recv(message_length)}
 	except:
 		return False
 
